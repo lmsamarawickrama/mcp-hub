@@ -1,9 +1,13 @@
-package com.saliam.ai.mcp.hub.prompt;
+package com.saliam.ai.mcp.hub.prompt.github;
 
-public abstract class GitHubMcpPrompt implements McpPrompt{
+import com.saliam.ai.mcp.hub.prompt.McpPrompt;
+import org.springframework.web.reactive.function.client.WebClient;
 
-    public CommitMessagePrompt(WebClient.Builder builder, @Value("${github.token}") String token) {
-        super(builder, token);
+public abstract class GitHubMcpPrompt implements McpPrompt {
+
+    protected final WebClient webClient;
+
+    protected GitHubMcpPrompt(WebClient.Builder builder, String token) {
+        this.webClient = builder.baseUrl("https://api.github.com").build();
     }
-
 }
