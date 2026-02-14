@@ -1,0 +1,28 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: mcp-hub
+
+  ai:
+    mcp:
+      server:
+        protocol: STREAMABLE
+        name: mcp-hub
+        version: 1.0.0
+        type: ASYNC
+        streamable-http:
+          mcp-endpoint: "/mcp"
+          keep-alive-interval: 30s
+
+
+github:
+  token: ${GITHUB_TOKEN:ghp_}
+
+
+
+
+
+
+
