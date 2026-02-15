@@ -4,7 +4,7 @@ A central Model Context Protocol (MCP) hub server built with Spring Boot that re
 
 ## Features
 - HTTP MCP endpoint at `/mcp` for tool and prompt calls
-- GitHub tools (e.g., `fetch_repositories`) using per-request token via custom header
+- GitHub tools (e.g., `fetch_repositories`) currently use a token from application properties
 - Prompt registration (e.g., commit message prompt)
 - Extensible tool/prompt registry via Spring beans
 
@@ -30,32 +30,41 @@ java -jar target/mcp-hub-*.jar
 
 The server starts on port 8081 by default (check `src/main/resources/application.yaml`).
 
-## MCP Client Configuration
-Configure your MCP client (e.g., GitHub Copilot) to use the hub:
+## Authentication (Current Behavior)
+Currently, the GitHub token is read from application properties (`github.token`) defined in `application.yaml`. You can override it via an environment variable before starting the server:
 
+Windows PowerShell:
+```
+$env:GITHUB_TOKEN = "<your_personal_access_token>"; java -jar target/mcp-hub-*.jar
+```
+
+application.yaml snippet:
+```
+github:
+  token: ${GITHUB_TOKEN:ghp_example_default}
+```
+
+## Planned Authentication via Custom Header
+Header-based per-request authentication (e.g., `X-GITHUB-TOKEN`) is planned so different users can pass their own tokens through the MCP client (like Copilot). Once implemented, tools will extract the token from the MCP transport context. Until then, use the application property as described above.
+
+## MCP Client Configuration (Example)
+You may configure your MCP client (e.g., Copilot) to call the hub, but note that as of now the server does not consume `X-GITHUB-TOKEN` for tool calls:
 ```
 {
   "servers": {
     "mcp-hub": {
       "type": "http",
-      "url": "http://localhost:8081/mcp",
-      "headers": {
-        "X-GITHUB-TOKEN": "<your_personal_access_token>"
-      }
+      "url": "http://localhost:8081/mcp"
+      // headers like X-GITHUB-TOKEN will be supported in a future update
     }
   }
 }
 ```
 
-## Authentication via Custom Header
-- The server expects a GitHub token in the `X-GITHUB-TOKEN` header for GitHub-related tools.
-- Tools read the token from the MCP exchange transport context and call GitHub APIs.
-- If the header is missing, tools return a clear error message.
-
 ## Tools
 - `fetch_repositories`: Lists repositories for the authenticated user
   - Path: `com.saliam.ai.mcp.hub.tool.github.FetchRepositoriesTool`
-  - Requires `X-GITHUB-TOKEN`
+  - Uses `github.token` from application properties at runtime
 
 Add more tools under `src/main/java/com/saliam/ai/mcp/hub/tool/**`.
 
@@ -64,12 +73,12 @@ Add more tools under `src/main/java/com/saliam/ai/mcp/hub/tool/**`.
 
 ## Development Notes
 - Tool and prompt registration happens in `McpRegistryConfig` using `McpAsyncServer` and `McpServerFeatures`.
-- Tokens are extracted from the MCP transport context; ensure your client sends headers as shown above.
+- GitHub authentication currently reads from `github.token` in `application.yaml`.
 
 ## Troubleshooting
 - If MCP requests time out or return 500:
   - Ensure the server is running on port 8081 and `/mcp` is reachable
-  - Verify your MCP client includes `X-GITHUB-TOKEN`
+  - Verify the `GITHUB_TOKEN` environment variable or `application.yaml` value is set correctly
   - Check server logs for exceptions during tool dispatch
 - Use PowerShell to validate your token:
 ```
